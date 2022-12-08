@@ -1,0 +1,70 @@
+#Nova
+
+- name: Installing the packages of Nova
+  apt:
+    name:
+      - nova-compute
+      - nova-api
+      - nova-conductor
+      - nova-novncproxy
+      - nova-scheduler
+    state: present
+    update_cache: yes
+ 
+- name: edit Nova file 
+  copy:
+    content: |
+      connection = mysql+pymysql://nova:NOVA_DBPASS@controller/nova_api
+      
+      connection = mysql+pymysql://nova:NOVA_DBPASS@controller/nova
+      
+      transport_url = rabbit://openstack:RABBIT_PASS@controller:5672/
+      
+      auth_strategy = keystone
+
+      www_authenticate_uri = http://controller:5000/
+      auth_url = http://controller:5000/
+      memcached_servers = controller:11211
+      auth_type = password
+      project_domain_name = Default
+      user_domain_name = Default
+      project_name = service
+      username = nova
+      password = NOVA_PASS
+      
+      my_ip = 10.0.0.11
+      
+      enabled = true
+      
+      server_listen = $my_ip
+      server_proxyclient_address = $my_ip
+      
+      api_servers = http://controller:9292
+      
+      lock_path = /var/lib/nova/tmp
+      
+      region_name = RegionOne
+      project_domain_name = Default
+      project_name = service
+      auth_type = password
+      user_domain_name = Default
+      auth_url = http://controller:5000/v3
+      username = placement
+      password = PLACEMENT_PASS
+      
+    dest: /etc/nova/nova.conf
+    mode: "0755"
+    
+- name: Restarting the nova-compute
+  service:
+    name: nova-compute
+    state: restarted
+    enabled: yes
+
+- block:
+  - name: Verifying if already running and active the nova-compute.
+    shell: systemctl status nova-compute
+    register: novacompute_service
+    
+  - debug:
+      msg="{{ novacompute_service }}"

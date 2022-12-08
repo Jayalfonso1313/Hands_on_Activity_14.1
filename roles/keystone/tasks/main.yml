@@ -1,0 +1,29 @@
+#Keystone
+
+- name: Installing the Keystone
+  apt:
+    name: keystone
+    state: present
+    update_cache: yes
+
+- name: edit keystone file
+  copy:
+    content: |
+      connection = mysql+pymysql://keystone:KEYSTONE_DBPASS@controller/keystone
+      provider = fernet
+    dest: /etc/keystone/keystone.conf
+    mode: "0755"
+    
+- name: Restating the keystone
+  service:
+    name: apache2
+    state: restarted
+    enabled: yes
+
+- block:
+  - name: Verifying if already active and running the keystone.
+    shell: systemctl status apache2
+    register: keystone_service
+    
+  - debug:
+      msg="{{ keystone_service }}"
